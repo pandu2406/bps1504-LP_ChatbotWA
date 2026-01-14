@@ -358,6 +358,80 @@ return [
                     'isi' => 'Sering beda data dengan Dinas. BPS pakai Satelit (KSA). Kalau sawah sudah jadi ruko/perumahan, BPS coret dari luas sawah. Jujur itu pahit.'
                 ]
             ]
+        ],
+        'lowongan_karir' => [
+            'label' => '📂 Info Lowongan & Karir',
+            'items' => [
+                [
+                    'judul' => 'Cara Jadi Mitra Statistik',
+                    'isi' => 'Daftar di aplikasi/web SOBAT BPS (mitra.bps.go.id). Buat akun, upload KTP/Ijazah, dan tunggu info seleksi di menu "Daftar Survei". Jangan titip berkas fisik!'
+                ],
+                [
+                    'judul' => 'Beda Mitra vs PPPK/CPNS',
+                    'isi' => 'Mitra = Pegawai Kontrak per kegiatan (Gaji per gawean). PPPK & CPNS = ASN Tetap (Seleksi terpusat Nasional).'
+                ]
+            ]
+        ],
+        'jam_layanan' => [
+            'label' => '📂 Jam Layanan Operasional (PST)',
+            'items' => [
+                [
+                    'judul' => 'Jam Buka Kantor',
+                    'isi' => 'Senin-Kamis (08.00-15.30), Jumat (08.00-16.00). Sabtu/Minggu Libur. Layanan Online WhatsApp tetap bisa diakses (respon bot).'
+                ],
+                [
+                    'judul' => 'Alamat BPS Batang Hari',
+                    'isi' => 'Jl. Jenderal Sudirman, Muara Bulian (Kompleks Perkantoran Pemda, dekat Kantor Bupati/DPRD).'
+                ]
+            ]
+        ],
+        'solusi_masalah' => [
+            'label' => '📂 Solusi Masalah Website (Tech Support)',
+            'items' => [
+                [
+                    'judul' => 'Web Sobat BPS Error/Lemot',
+                    'isi' => 'Biasanya traffic tinggi saat rekrutmen. Solusi: Akses jam sepi (tengah malam), pakai Chrome terbaru, bersihkan cache.'
+                ],
+                [
+                    'judul' => 'Lupa Password Sobat',
+                    'isi' => 'Klik "Lupa Password" di mitra.bps.go.id. Link reset masuk email (cek folder Spam).'
+                ]
+            ]
+        ],
+        'profil_wilayah' => [
+            'label' => '📂 Profil Wilayah Batang Hari',
+            'items' => [
+                [
+                    'judul' => '8 Kecamatan Batang Hari',
+                    'isi' => 'Mersam, Maro Sebo Ulu, Batin XXIV, Muara Tembesi, Muara Bulian (Ibukota), Bajubang, Maro Sebo Ilir, Pemayung.'
+                ],
+                [
+                    'judul' => 'Sungai Batanghari',
+                    'isi' => 'Sungai terpanjang di Sumatera. Dulu "Jalan Tol" perdagangan nenek moyang, sekarang sumber pengairan vital.'
+                ]
+            ]
+        ],
+        'fitur_interaktif' => [
+            'label' => '📂 Fun Quiz (Tes Pengetahuan)',
+            'items' => [
+                [
+                    'judul' => 'Tebak Singkatan: PDRB?',
+                    'isi' => 'Jataban: Produk Domestik Regional Bruto (Kue Ekonomi Daerah).'
+                ],
+                [
+                    'judul' => 'Mitos/Fakta: Petugas BPS cairkan Bansos?',
+                    'isi' => 'MITOS! BPS cuma mendata. Bansos itu wewenang Kemensos.'
+                ]
+            ]
+        ],
+        'etika_pengaduan' => [
+            'label' => '📂 Etika & Pengaduan',
+            'items' => [
+                [
+                    'judul' => 'Lapor Pungli (Gratifikasi)',
+                    'isi' => 'Layanan BPS GRATIS. Petugas dilarang terima uang rokok/imbalan. Jika dipaksa, Lapor ke Pengaduan Masyarakat dengan nama & bukti.'
+                ]
+            ]
         ]
     ]
 ];

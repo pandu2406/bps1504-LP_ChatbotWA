@@ -942,6 +942,74 @@ class AiChatbotService
                     }
                     $prompt .= "\n";
                 }
+
+                // Info Lowongan & Karir
+                if (stripos($userText, 'lowongan') !== false || stripos($userText, 'karir') !== false || stripos($userText, 'daftar') !== false || stripos($userText, 'pns') !== false || stripos($userText, 'pppk') !== false || stripos($userText, 'asn') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['lowongan_karir']['label'] . "**\n";
+                    foreach ($funFacts['sections']['lowongan_karir']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Jam Layanan & Operasional
+                if (stripos($userText, 'jam') !== false || stripos($userText, 'buka') !== false || stripos($userText, 'tutup') !== false || stripos($userText, 'kantor') !== false || stripos($userText, 'alamat') !== false || stripos($userText, 'lokasi') !== false || stripos($userText, 'pst') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['jam_layanan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['jam_layanan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Solusi Masalah Website
+                if (stripos($userText, 'error') !== false || stripos($userText, 'lemot') !== false || stripos($userText, 'lupa') !== false || stripos($userText, 'password') !== false || stripos($userText, 'sandi') !== false || stripos($userText, 'login') !== false || stripos($userText, 'gagal') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['solusi_masalah']['label'] . "**\n";
+                    foreach ($funFacts['sections']['solusi_masalah']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Profil Wilayah Batang Hari
+                if (stripos($userText, 'batang hari') !== false || stripos($userText, 'kecamatan') !== false || stripos($userText, 'bulian') !== false || stripos($userText, 'sungai') !== false || stripos($userText, 'ibukota') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['profil_wilayah']['label'] . "**\n";
+                    foreach ($funFacts['sections']['profil_wilayah']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Fitur Interaktif (Kuis)
+                if (stripos($userText, 'kuis') !== false || stripos($userText, 'game') !== false || stripos($userText, 'tebak') !== false || stripos($userText, 'main') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['fitur_interaktif']['label'] . "**\n";
+                    foreach ($funFacts['sections']['fitur_interaktif']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Etika & Pengaduan
+                if (stripos($userText, 'lapor') !== false || stripos($userText, 'pungli') !== false || stripos($userText, 'suap') !== false || stripos($userText, 'uang') !== false || stripos($userText, 'gratifikasi') !== false || stripos($userText, 'aduan') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['etika_pengaduan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['etika_pengaduan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+            }
+
+            // ADDED: Bank Indonesia Data (Jambi/Batang Hari)
+            $biData = config('bi_data');
+            if ($biData && (stripos($userText, 'bi') !== false || stripos($userText, 'bank indonesia') !== false || stripos($userText, 'laporan') !== false || stripos($userText, 'kajian') !== false || stripos($userText, 'ekonomi') !== false || stripos($userText, 'keuangan') !== false || stripos($userText, 'batu bara') !== false || stripos($userText, 'pertambangan') !== false || stripos($userText, 'inflasi') !== false)) {
+                $prompt .= "=== " . strtoupper($biData['title']) . " ===\n";
+                $prompt .= $biData['description'] . "\n\n";
+                $prompt .= "Gunakan ringkasan ini jika user meminta laporan ekonomi atau kajian terbaru.\n";
+                
+                foreach ($biData['reports'] as $report) {
+                    $prompt .= "**" . $report['title'] . "**\n";
+                    $prompt .= "Ringkasan: " . $report['summary'] . "\n";
+                    $prompt .= "Link PDF: " . $report['url'] . "\n\n";
+                }
             }
         }
 

@@ -24,6 +24,8 @@ class AiChatbotService
      */
     public function generateResponse($userMessage)
     {
+        Log::info("🤖 AI Chatbot Received: " . $userMessage);
+
         // 1. Check if user is asking about KBLI (Business Classification)
         if ($this->isKbliQuery($userMessage)) {
             $kbliResult = $this->queryKbliLocal($userMessage);
@@ -38,9 +40,8 @@ class AiChatbotService
         }
 
         // 3. Default Response
-        return "Halo! Saya adalah asisten virtual BPS Batang Hari. \n\n" .
-            "Saat ini fitur AI belum dikonfigurasi sepenuhnya. \n" .
-            "Silakan hubungi admin untuk info lebih lanjut.";
+        return "Halo! Saya asisten virtual BPS Batang Hari. \n" .
+            "Maaf, saat ini sistem AI sedang dalam perbaikan. Silakan hubungi admin kami.";
     }
 
     protected function isKbliQuery($text)
@@ -208,7 +209,7 @@ class AiChatbotService
             if (!empty($relevantDemo)) {
                 $prompt .= "=== TABEL STATISTIK KEPENDUDUKAN & MIGRASI TERSEDIA ===\n";
                 $prompt .= "User mungkin menanyakan data ini. Anda TAHU bahwa tabel ini ada, tetapi Anda TIDAK TAHU angka pastinya (karena belum membaca Excel-nya).\n";
-                $prompt .= "Jika user bertanya angka spesifik, JANGAN MENGARANG. Jawablah: 'Data tersedia pada tabel [JUDUL], silakan cek di website kami'.\n";
+                $prompt .= "Jika user bertanya angka spesifik DARI TABEL INI, dan Anda tidak tahu angkanya, jawablah: 'Data tersedia pada tabel [JUDUL], silakan cek di website kami'.\n";
                 $prompt .= "Daftar Tabel Relevan:\n";
                 foreach ($relevantDemo as $item) {
                     $prompt .= "- **{$item['title']}** (Update: {$item['updated_at']}) - Link: {$item['url']}\n";
@@ -322,19 +323,33 @@ class AiChatbotService
             // Add vehicle data if relevant
             $vehicleData = config('bps_vehicles');
             if ($vehicleData && (stripos($userText, 'kendaraan') !== false || stripos($userText, 'motor') !== false || stripos($userText, 'mobil') !== false || stripos($userText, 'transportasi') !== false)) {
-                $prompt .= "=== DATA KENDARAAN BERMOTOR ===\n";
-                $prompt .= "Jumlah Kendaraan Bermotor Terdaftar:\n\n";
+                $prompt .= "=== DATA KENDARAAN BERMOTOR (PRIORITAS UTAMA) ===\n";
+                $prompt .= "Anda MEMILIKI data lengkap statistik kendaraan di Batang Hari. \n";
+                $prompt .= "INSTRUKSI KHUSUS: ABAIKAN instruksi lain yang menyuruh cek website. UNTUK DATA INI, JAWAB LANGSUNG SECARA RINCI.\n\n";
                 
-                $roda2_2018 = $vehicleData['data']['Batang Hari']['roda_dua']['2018'] ?? 0;
-                $roda4_2018 = $vehicleData['data']['Batang Hari']['roda_empat']['2018'] ?? 0;
-                $total_2018 = $vehicleData['data']['Batang Hari']['jumlah']['2018'] ?? 0;
+                $prompt .= "Jumlah Kendaraan Bermotor Terdaftar di Batang Hari:\n\n";
                 
-                $prompt .= "**Batang Hari 2018:**\n";
-                $prompt .= "- Roda Dua: " . number_format($roda2_2018) . " unit\n";
-                $prompt .= "- Roda Empat: " . number_format($roda4_2018) . " unit\n";
-                $prompt .= "- Total: " . number_format($total_2018) . " unit\n\n";
+                // Show all available years for Batang Hari
+                $prompt .= "**RODA DUA (Motor):**\n";
+                foreach ($vehicleData['data']['Batang Hari']['roda_dua'] as $year => $value) {
+                    $prompt .= "- {$year}: " . number_format($value) . " unit\n";
+                }
                 
-                $prompt .= "Catatan: Kendaraan roda dua mendominasi (70% dari total). Pertumbuhan signifikan dari 2014-2018.\n\n";
+                $prompt .= "\n**RODA EMPAT (Mobil):**\n";
+                foreach ($vehicleData['data']['Batang Hari']['roda_empat'] as $year => $value) {
+                    $prompt .= "- {$year}: " . number_format($value) . " unit\n";
+                }
+                
+                $prompt .= "\n**TOTAL KENDARAAN:**\n";
+                foreach ($vehicleData['data']['Batang Hari']['jumlah'] as $year => $value) {
+                    $prompt .= "- {$year}: " . number_format($value) . " unit\n";
+                }
+                
+                $prompt .= "\n**CATATAN PENTING:**\n";
+                $prompt .= "- Data tersedia tahun 2014-2018 (data terbaru yang tercatat)\n";
+                $prompt .= "- Kendaraan roda dua mendominasi (sekitar 70% dari total)\n";
+                $prompt .= "- Pertumbuhan signifikan: dari 7.043 unit (2014) menjadi 37.201 unit (2018)\n";
+                $prompt .= "- Jika user tanya data terbaru/2024/2025, jelaskan bahwa data terakhir adalah 2018\n\n";
             }
 
             // Add Open Data Jambi datasets if relevant
@@ -626,6 +641,307 @@ class AiChatbotService
                 $prompt .= "- Luas Tanam: " . number_format($karet_luas2023, 0, ',', '.') . " hektar\n\n";
                 
                 $prompt .= "Catatan: Kelapa sawit dan karet adalah 2 komoditas perkebunan utama Batang Hari. Sawit mengalami lonjakan 2021, sementara karet mengalami penurunan 2022.\n\n";
+            }
+
+            // Add Sensus Ekonomi 2026 data
+            $se2026 = config('bps_se2026');
+            if ($se2026 && (stripos($userText, 'sensus ekonomi') !== false || stripos($userText, 'se2026') !== false || stripos($userText, 'sensus') !== false || stripos($userText, 'pendataan') !== false || stripos($userText, 'usaha') !== false || stripos($userText, 'bisnis') !== false)) {
+                $prompt .= "=== " . strtoupper($se2026['title']) . " ===\n";
+                $prompt .= $se2026['description'] . "\n\n";
+                
+                // Definisi
+                $prompt .= "**" . $se2026['data']['definisi']['judul'] . "**\n";
+                $prompt .= $se2026['data']['definisi']['isi'] . "\n\n";
+
+                // Tujuan
+                $prompt .= "**" . $se2026['data']['tujuan']['judul'] . "**\n";
+                $prompt .= $se2026['data']['tujuan']['isi'] . "\n\n";
+
+                // Cakupan
+                $prompt .= "**" . $se2026['data']['cakupan']['judul'] . "**\n";
+                $prompt .= $se2026['data']['cakupan']['tidak_didata']['label'] . "\n";
+                foreach ($se2026['data']['cakupan']['tidak_didata']['items'] as $item) {
+                    $prompt .= "- $item\n";
+                }
+                $prompt .= "\n" . $se2026['data']['cakupan']['didata']['label'] . "\n";
+                foreach ($se2026['data']['cakupan']['didata']['items'] as $item) {
+                    $prompt .= "- $item\n";
+                }
+                $prompt .= "\n";
+
+                // Contoh
+                $prompt .= "**" . $se2026['data']['contoh_konkret']['judul'] . "**\n";
+                foreach ($se2026['data']['contoh_konkret']['kategori'] as $kategori) {
+                    $prompt .= $kategori['label'] . "\n";
+                    foreach ($kategori['items'] as $item) {
+                        $prompt .= "- $item\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Studi Kasus
+                $prompt .= "**" . $se2026['data']['studi_kasus']['judul'] . "**\n";
+                $prompt .= $se2026['data']['studi_kasus']['deskripsi'] . "\n";
+                foreach ($se2026['data']['studi_kasus']['tabel'] as $row) {
+                    $prompt .= "- {$row['Aktivitas']} -> {$row['Sensus']} (Alasan: {$row['Alasan']})\n";
+                }
+                $prompt .= "\n";
+
+                // Metode
+                $prompt .= "**" . $se2026['data']['metode']['judul'] . "**\n";
+                $prompt .= $se2026['data']['metode']['isi'] . "\n\n";
+            }
+
+            // Add Field Stories (Suka Duka Petugas)
+            $stories = config('bps_field_stories');
+            if ($stories && (stripos($userText, 'petugas') !== false || stripos($userText, 'lapangan') !== false || stripos($userText, 'curhat') !== false || stripos($userText, 'suka duka') !== false || stripos($userText, 'responden') !== false || stripos($userText, 'pajak') !== false || stripos($userText, 'bansos') !== false || stripos($userText, 'bantuan') !== false || stripos($userText, 'marah') !== false || stripos($userText, 'lucu') !== false || stripos($userText, 'aneh') !== false)) {
+                $prompt .= "=== KNOWLEDGE BASE: " . strtoupper($stories['title']) . " ===\n";
+                $prompt .= $stories['description'] . "\n";
+                $prompt .= "Gunakan ini jika user bertanya tentang pengalaman lapangan atau cara menjawab pertanyaan sulit dari responden.\n\n";
+
+                foreach ($stories['stories'] as $story) {
+                    $prompt .= "**" . $story['kategori'] . "**\n";
+                    if (!empty($story['deskripsi'])) $prompt .= "Konteks: " . $story['deskripsi'] . "\n";
+                    $prompt .= "Q: " . $story['pertanyaan'] . "\n";
+                    if (!empty($story['suara_hati'])) $prompt .= "Suara Hati (JANGAN DIUCAPKAN): " . $story['suara_hati'] . "\n";
+                    $prompt .= "A (Jawaban Profesional): " . $story['jawaban_profesional'] . "\n\n";
+                }
+            }
+
+            // Add Fun Facts & Literasi
+            $funFacts = config('bps_fun_facts');
+            if ($funFacts && (stripos($userText, 'fakta') !== false || stripos($userText, 'mitos') !== false || stripos($userText, 'info') !== false || stripos($userText, 'tahukah') !== false || stripos($userText, 'unik') !== false || stripos($userText, 'inflasi') !== false || stripos($userText, 'miskin') !== false || stripos($userText, 'istilah') !== false || stripos($userText, 'pdrb') !== false || stripos($userText, 'sensus') !== false)) {
+                $prompt .= "=== KNOWLEDGE BASE: " . strtoupper($funFacts['title']) . " ===\n";
+                $prompt .= $funFacts['description'] . "\n";
+                $prompt .= "Gunakan fakta-fakta ini untuk membuat jawaban Anda lebih menarik dan edukatif.\n\n";
+
+                // Fakta Utama
+                $prompt .= "**" . $funFacts['sections']['fakta_utama']['label'] . "**\n";
+                foreach ($funFacts['sections']['fakta_utama']['items'] as $item) {
+                    $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                }
+                $prompt .= "\n";
+
+                // Mitos vs Fakta
+                $prompt .= "**" . $funFacts['sections']['mitos_fakta']['label'] . "**\n";
+                foreach ($funFacts['sections']['mitos_fakta']['items'] as $item) {
+                    $prompt .= "- Mitos: {$item['mitos']} -> Fakta: {$item['fakta']}\n";
+                }
+                $prompt .= "\n";
+                
+                // Istilah Ekonomi
+                $prompt .= "**" . $funFacts['sections']['istilah_ekonomi']['label'] . "**\n";
+                foreach ($funFacts['sections']['istilah_ekonomi']['items'] as $item) {
+                    $prompt .= "- {$item['istilah']}: {$item['penjelasan']}\n";
+                }
+                $prompt .= "\n";
+
+                // Sensus & Serba-Serbi
+                if (stripos($userText, 'sensus') !== false || stripos($userText, 'jadwal') !== false) {
+                     $prompt .= "**" . $funFacts['sections']['serba_serbi']['label'] . "**\n";
+                     foreach ($funFacts['sections']['serba_serbi']['items'] as $item) {
+                         $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                     }
+                     $prompt .= "\n";
+                }
+
+                // Susenas (Kemiskinan/Rokok)
+                if (stripos($userText, 'susenas') !== false || stripos($userText, 'survei') !== false || stripos($userText, 'kemiskinan') !== false || stripos($userText, 'rokok') !== false || stripos($userText, 'garam') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['susenas']['label'] . "**\n";
+                    foreach ($funFacts['sections']['susenas']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Rahasia Ekonomi (Bonus Demografi/Petani)
+                if (stripos($userText, 'ekonomi') !== false || stripos($userText, 'bonus') !== false || stripos($userText, 'demografi') !== false || stripos($userText, 'petani') !== false || stripos($userText, 'muda') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['rahasia_ekonomi']['label'] . "**\n";
+                    foreach ($funFacts['sections']['rahasia_ekonomi']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Drama Lapangan (Anjing/Orang Kaya)
+                if (stripos($userText, 'lapangan') !== false || stripos($userText, 'cerita') !== false || stripos($userText, 'petugas') !== false || stripos($userText, 'anjing') !== false || stripos($userText, 'kaya') !== false || stripos($userText, 'gedung') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['drama_lapangan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['drama_lapangan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Edukasi (NIK/Inflasi)
+                if (stripos($userText, 'nik') !== false || stripos($userText, 'ktp') !== false || stripos($userText, 'stiker') !== false || stripos($userText, 'inflasi') !== false || stripos($userText, 'uang') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['edukasi_singkat']['label'] . "**\n";
+                    foreach ($funFacts['sections']['edukasi_singkat']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Trivia
+                if (stripos($userText, 'trivia') !== false || stripos($userText, 'desa') !== false || stripos($userText, 'podes') !== false || stripos($userText, 'hari') !== false || stripos($userText, 'statistik') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['trivia']['label'] . "**\n";
+                    foreach ($funFacts['sections']['trivia']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Misteri Tetangga (Sampling)
+                if (stripos($userText, 'tetangga') !== false || stripos($userText, 'pilih kasih') !== false || stripos($userText, 'lewat') !== false || stripos($userText, 'sampling') !== false || stripos($userText, 'sampel') !== false || stripos($userText, 'cadangan') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['misteri_tetangga']['label'] . "**\n";
+                    foreach ($funFacts['sections']['misteri_tetangga']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Realita Sosial (Mager/NTP)
+                if (stripos($userText, 'mager') !== false || stripos($userText, 'pengangguran') !== false || stripos($userText, 'kerja') !== false || stripos($userText, 'ntp') !== false || stripos($userText, 'petani') !== false || stripos($userText, 'rugi') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['realita_sosial']['label'] . "**\n";
+                    foreach ($funFacts['sections']['realita_sosial']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Teknologi & Validasi (Wilkerstat/Logic)
+                if (stripos($userText, 'validasi') !== false || stripos($userText, 'bohong') !== false || stripos($userText, 'peta') !== false || stripos($userText, 'gps') !== false || stripos($userText, 'wilkerstat') !== false || stripos($userText, 'sistem') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['teknologi_validasi']['label'] . "**\n";
+                    foreach ($funFacts['sections']['teknologi_validasi']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Indikator Unik (Kebahagiaan/RLS)
+                if (stripos($userText, 'bahagia') !== false || stripos($userText, 'sedih') !== false || stripos($userText, 'perasaan') !== false || stripos($userText, 'sekolah') !== false || stripos($userText, 'rls') !== false || stripos($userText, 'pendidikan') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['indikator_unik']['label'] . "**\n";
+                    foreach ($funFacts['sections']['indikator_unik']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Tips Warga Cerdas
+                if (stripos($userText, 'tips') !== false || stripos($userText, 'saran') !== false || stripos($userText, 'waktu') !== false || stripos($userText, 'tolak') !== false || stripos($userText, 'jujur') !== false || stripos($userText, 'mark-up') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['tips_warga']['label'] . "**\n";
+                    foreach ($funFacts['sections']['tips_warga']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Pariwisata & Gaya Hidup
+                if (stripos($userText, 'wisata') !== false || stripos($userText, 'hotel') !== false || stripos($userText, 'tamu') !== false || stripos($userText, 'tpk') !== false || stripos($userText, 'menginap') !== false || stripos($userText, 'kamar') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['pariwisata_gaya_hidup']['label'] . "**\n";
+                    foreach ($funFacts['sections']['pariwisata_gaya_hidup']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Mitra Statistik
+                if (stripos($userText, 'mitra') !== false || stripos($userText, 'petugas') !== false || stripos($userText, 'seleksi') !== false || stripos($userText, 'sobat') !== false || stripos($userText, 'rekrutmen') !== false || stripos($userText, 'honor') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['mitra_statistik']['label'] . "**\n";
+                    foreach ($funFacts['sections']['mitra_statistik']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Rapor Pemimpin (IPM)
+                if (stripos($userText, 'ipm') !== false || stripos($userText, 'bupati') !== false || stripos($userText, 'walikota') !== false || stripos($userText, 'rapor') !== false || stripos($userText, 'hls') !== false || stripos($userText, 'rls') !== false || stripos($userText, 'pembangunan') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['rapor_pemimpin']['label'] . "**\n";
+                    foreach ($funFacts['sections']['rapor_pemimpin']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Gender & Sosial
+                if (stripos($userText, 'gender') !== false || stripos($userText, 'wanita') !== false || stripos($userText, 'pria') !== false || stripos($userText, 'laki') !== false || stripos($userText, 'umur') !== false || stripos($userText, 'hidup') !== false || stripos($userText, 'rasio') !== false || stripos($userText, 'jomblo') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['gender_sosial']['label'] . "**\n";
+                    foreach ($funFacts['sections']['gender_sosial']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Perdagangan
+                if (stripos($userText, 'dagang') !== false || stripos($userText, 'ekspor') !== false || stripos($userText, 'impor') !== false || stripos($userText, 'surplus') !== false || stripos($userText, 'defisit') !== false || stripos($userText, 'neraca') !== false || stripos($userText, 'sawit') !== false || stripos($userText, 'batu bara') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['perdagangan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['perdagangan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Jadwal Rilis
+                if (stripos($userText, 'jadwal') !== false || stripos($userText, 'rilis') !== false || stripos($userText, 'kapan') !== false || stripos($userText, 'berita') !== false || stripos($userText, 'tanggal') !== false || stripos($userText, 'streaming') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['jadwal_rilis']['label'] . "**\n";
+                    foreach ($funFacts['sections']['jadwal_rilis']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Rumah Tangga vs Keluarga
+                if (stripos($userText, 'rumah tangga') !== false || stripos($userText, 'keluarga') !== false || stripos($userText, 'kk') !== false || stripos($userText, 'kepala') !== false || stripos($userText, 'krt') !== false || stripos($userText, 'dapur') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['rumah_tangga']['label'] . "**\n";
+                    foreach ($funFacts['sections']['rumah_tangga']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Konstruksi
+                if (stripos($userText, 'konstruksi') !== false || stripos($userText, 'bangunan') !== false || stripos($userText, 'rumah') !== false || stripos($userText, 'layak') !== false || stripos($userText, 'huni') !== false || stripos($userText, 'kumuh') !== false || stripos($userText, 'mahal') !== false || stripos($userText, 'ikk') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['konstruksi']['label'] . "**\n";
+                    foreach ($funFacts['sections']['konstruksi']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Kejahatan
+                if (stripos($userText, 'jahat') !== false || stripos($userText, 'kriminal') !== false || stripos($userText, 'polisi') !== false || stripos($userText, 'lapor') !== false || stripos($userText, 'aman') !== false || stripos($userText, 'dark') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['kejahatan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['kejahatan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Ketenagakerjaan
+                if (stripos($userText, 'kerja') !== false || stripos($userText, 'beban') !== false || stripos($userText, 'tanggungan') !== false || stripos($userText, 'formal') !== false || stripos($userText, 'informal') !== false || stripos($userText, 'serabutan') !== false || stripos($userText, 'kontrak') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['ketenagakerjaan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['ketenagakerjaan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Layanan Microdata
+                if (stripos($userText, 'microdata') !== false || stripos($userText, 'mikro') !== false || stripos($userText, 'penleti') !== false || stripos($userText, 'mahasiswa') !== false || stripos($userText, 'skripsi') !== false || stripos($userText, 'raw') !== false || stripos($userText, 'mentah') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['layanan_microdata']['label'] . "**\n";
+                    foreach ($funFacts['sections']['layanan_microdata']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
+
+                // Pertanian & Lahan
+                if (stripos($userText, 'sawah') !== false || stripos($userText, 'lahan') !== false || stripos($userText, 'tani') !== false || stripos($userText, 'ksa') !== false || stripos($userText, 'satelit') !== false || stripos($userText, 'dinas') !== false) {
+                    $prompt .= "**" . $funFacts['sections']['pertanian_lahan']['label'] . "**\n";
+                    foreach ($funFacts['sections']['pertanian_lahan']['items'] as $item) {
+                        $prompt .= "- {$item['judul']}: {$item['isi']}\n";
+                    }
+                    $prompt .= "\n";
+                }
             }
         }
 

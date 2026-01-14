@@ -1,0 +1,25 @@
+# ============================================
+# .htaccess untuk public_html/landingpage/
+# Protect Laravel files, only public/ accessible
+# ============================================
+
+# Redirect all requests to public folder
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Deny access to hidden files (starting with .)
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect sensitive Laravel files
+<FilesMatch "(\.env|composer\.json|composer\.lock|package\.json|artisan|\.git)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Disable directory browsing
+Options -Indexes

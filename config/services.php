@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'bps' => [
+        'api_key' => env('BPS_API_KEY'),
+        'domain_id' => env('BPS_DOMAIN_ID', '1504'), // Default to Batang Hari
+        'base_url' => env('BPS_BASE_URL', 'https://webapi.bps.go.id/v1/api'),
+    ],
+
 ];

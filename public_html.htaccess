@@ -1,0 +1,29 @@
+# ============================================
+# .htaccess untuk public_html/
+# Redirect root ke landing page Laravel
+# ============================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect root (/) ke landing page
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteRule ^(.*)$ /landingpage/public/ [L]
+    
+    # Optional: Redirect www to non-www
+    # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    # RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+    
+    # Optional: Force HTTPS
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "(^\.htaccess|^\.env|composer\.json|composer\.lock|package\.json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

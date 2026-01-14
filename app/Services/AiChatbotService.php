@@ -9,11 +9,13 @@ class AiChatbotService
 {
     protected $aiApiKey;
     protected $kbliApiUrl;
+    protected $bpsService;
 
     public function __construct()
     {
         $this->aiApiKey = env('OPENROUTER_API_KEY');
         $this->kbliApiUrl = 'http://localhost:8011';
+        $this->bpsService = new BpsApiService();
     }
 
     /**
@@ -36,7 +38,9 @@ class AiChatbotService
 
         // 2. Fallback to General AI (Xiaomi via OpenRouter)
         if ($this->aiApiKey) {
-            return $this->askAI($userMessage);
+            // ENHANCEMENT: Fetch real-time BPS data if applicable
+            $extraContext = $this->getBpsApiContext($userMessage);
+            return $this->askAI($userMessage, $extraContext);
         }
 
         // 3. Default Response
@@ -85,7 +89,57 @@ class AiChatbotService
         return $reply;
     }
 
-    protected function askAI($text)
+    protected function getBpsApiContext($text)
+    {
+        // Simple keyword extraction (can be improved)
+        $keywords = explode(' ', strtolower($text));
+        $searchTerms = array_filter($keywords, fn($k) => strlen($k) > 3);
+        
+        if (empty($searchTerms)) return "";
+
+        $apiContext = "";
+        
+        // Try to search for each significant keyword
+        foreach ($searchTerms as $term) {
+            // Skip common words
+            if (in_array($term, ['yang', 'dari', 'pada', 'untuk', 'dengan'])) continue;
+
+            $results = $this->bpsService->searchContent($term);
+            
+            // 1. Static Tables
+            if (!empty($results['static_tables'])) {
+                $apiContext .= "=== DATA BPS (TABEL) UNTUK '$term' ===\n";
+                foreach ($results['static_tables'] as $table) {
+                     $content = $this->bpsService->fetchStaticTableContent($table['table_id']);
+                     if ($content) $apiContext .= $content . "\n";
+                }
+                $apiContext .= "\n";
+            }
+
+            // 2. Publications
+            if (!empty($results['publications'])) {
+                $apiContext .= "=== PUBLIKASI BPS UNTUK '$term' ===\n";
+                foreach ($results['publications'] as $pub) {
+                     $content = $this->bpsService->fetchPublicationContent($pub['pub_id']);
+                     if ($content) $apiContext .= $content . "\n";
+                }
+                $apiContext .= "\n";
+            }
+
+            // 3. Variables
+            if (!empty($results['variables'])) {
+                $apiContext .= "=== VARIABEL STATISTIK UNTUK '$term' ===\n";
+                foreach ($results['variables'] as $var) {
+                     $apiContext .= "- " . ($var['title'] ?? 'Data') . " (Cek website BPS untuk detail)\n";
+                }
+                $apiContext .= "\n";
+            }
+        }
+        
+        return $apiContext;
+    }
+
+    protected function askAI($text, $extraContext = "")
     {
         // Using OpenRouter (Xiaomi Model)
         $apiKey = $this->aiApiKey;
@@ -98,6 +152,11 @@ class AiChatbotService
         }
 
         try {
+            $systemPrompt = $this->buildSystemPrompt($text);
+            if (!empty($extraContext)) {
+                $systemPrompt .= "\n\n" . $extraContext;
+            }
+
             $response = Http::withoutVerifying()
                 ->withOptions(['force_ip_resolve' => 'v4'])
                 ->withHeaders([
@@ -109,7 +168,7 @@ class AiChatbotService
                         'messages' => [
                             [
                                 'role' => 'system',
-                                'content' => $this->buildSystemPrompt($text)
+                                'content' => $systemPrompt
                             ],
                             [
                                 'role' => 'user',

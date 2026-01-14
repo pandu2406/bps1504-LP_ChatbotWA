@@ -22,6 +22,7 @@ return [
             '2018' => 251663.00, '2019' => 251663.00, '2020' => 254727.00, '2021' => 473325.00,
             '2022' => 522015.00, '2023' => 553802.00
         ]
+    ]
     ],
     'karet' => [
         'title' => 'Produksi dan Luas Tanam Karet di Kabupaten Batang Hari',
